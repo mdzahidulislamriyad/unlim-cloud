@@ -186,15 +186,14 @@ class StorageViewModel extends ChangeNotifier {
   // Pick & Upload Multiple Files
   Future<int> pickAndUploadFiles() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        allowMultiple: true,
+      final files = await FilePicker.pickFiles(
         type: FileType.any,
       );
 
-      if (result == null || result.files.isEmpty) return 0;
+      if (files.isEmpty) return 0;
 
       int count = 0;
-      for (final f in result.files) {
+      for (final f in files) {
         if (f.path != null) {
           final file = File(f.path!);
           final uploaded = await _repository.uploadFile(
@@ -216,7 +215,7 @@ class StorageViewModel extends ChangeNotifier {
   // Pick & Upload an Entire Folder Recursively
   Future<int> pickAndUploadFolder() async {
     try {
-      final folderPath = await FilePicker.platform.getDirectoryPath();
+      final folderPath = await FilePicker.getDirectoryPath();
       if (folderPath == null || folderPath.isEmpty) return 0;
 
       final dir = Directory(folderPath);

@@ -20,7 +20,7 @@ dependencies:
   path_provider: ^2.1.2
   # UI & Media
   intl: ^0.19.0
-  file_picker: any
+  file_picker: ^13.3.0
   cached_network_image: ^3.3.1
   video_player: any
   chewie: any
