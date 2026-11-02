@@ -46,45 +46,6 @@ jobs:
           echo "flutter.compileSdkVersion=36" >> android/local.properties
           echo "android.suppressUnsupportedCompileSdk=36,37" >> android/gradle.properties
 
-          # Patch android/app/build.gradle.kts or android/app/build.gradle
-          if [ -f "android/app/build.gradle.kts" ]; then
-            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/g' android/app/build.gradle.kts
-            sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 35/g' android/app/build.gradle.kts
-            echo "" >> android/app/build.gradle.kts
-            echo "tasks.matching { it.name.contains(\"AarMetadata\") }.configureEach {" >> android/app/build.gradle.kts
-            echo "    enabled = false" >> android/app/build.gradle.kts
-            echo "}" >> android/app/build.gradle.kts
-          fi
-
-          if [ -f "android/app/build.gradle" ]; then
-            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/g' android/app/build.gradle
-            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 36/g' android/app/build.gradle
-            sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 35/g' android/app/build.gradle
-            echo "" >> android/app/build.gradle
-            echo "tasks.matching { it.name.contains('AarMetadata') }.configureEach {" >> android/app/build.gradle
-            echo "    enabled = false" >> android/app/build.gradle
-            echo "}" >> android/app/build.gradle
-          fi
-
-          # Patch root build.gradle.kts or build.gradle
-          if [ -f "android/build.gradle.kts" ]; then
-            echo "" >> android/build.gradle.kts
-            echo "subprojects {" >> android/build.gradle.kts
-            echo "    tasks.matching { it.name.contains(\"AarMetadata\") }.configureEach {" >> android/build.gradle.kts
-            echo "        enabled = false" >> android/build.gradle.kts
-            echo "    }" >> android/build.gradle.kts
-            echo "}" >> android/build.gradle.kts
-          fi
-
-          if [ -f "android/build.gradle" ]; then
-            echo "" >> android/build.gradle
-            echo "allprojects {" >> android/build.gradle
-            echo "    tasks.matching { it.name.contains('AarMetadata') }.configureEach {" >> android/build.gradle
-            echo "        enabled = false" >> android/build.gradle
-            echo "    }" >> android/build.gradle
-            echo "}" >> android/build.gradle
-          fi
-
       - name: Get Dependencies
         run: flutter pub get
 
