@@ -168,6 +168,12 @@ class _FilesScreenState extends State<FilesScreen> {
                           'Upload files or create sub-folders',
                           style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          onPressed: () => vm.pickAndUploadFiles(),
+                          icon: const Icon(Icons.file_upload_outlined),
+                          label: const Text('Upload Files Here'),
+                        ),
                       ],
                     ),
                   )

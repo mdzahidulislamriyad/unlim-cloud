@@ -155,19 +155,18 @@ class StorageViewModel extends ChangeNotifier {
   List<CloudFile> getCurrentFiles() {
     List<CloudFile> list = _repository.allFiles;
 
+    // Filter by Folder first
+    if (_searchQuery.isEmpty) {
+      list = list.where((f) => f.folderId == _currentFolderId).toList();
+    } else {
+      list = list.where((f) => f.name.toLowerCase().contains(_searchQuery)).toList();
+    }
+
     // Filter by Category
     if (_selectedCategory == 'favorites') {
       list = list.where((f) => f.isFavorite).toList();
     } else if (_selectedCategory != 'all') {
       list = list.where((f) => f.type == _selectedCategory).toList();
-    } else if (_searchQuery.isEmpty) {
-      // In normal folder navigation, only show files in current folder
-      list = list.where((f) => f.folderId == _currentFolderId).toList();
-    }
-
-    // Filter by Search
-    if (_searchQuery.isNotEmpty) {
-      list = list.where((f) => f.name.toLowerCase().contains(_searchQuery)).toList();
     }
 
     // Sort
@@ -201,14 +200,15 @@ class StorageViewModel extends ChangeNotifier {
   // Pick & Upload Multiple Files
   Future<int> pickAndUploadFiles() async {
     try {
-      final files = await FilePicker.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
         type: FileType.any,
       );
 
-      if (files.isEmpty) return 0;
+      if (result == null || result.files.isEmpty) return 0;
 
       int count = 0;
-      for (final f in files) {
+      for (final f in result.files) {
         if (f.path != null) {
           final file = File(f.path!);
           final uploaded = await _repository.uploadFile(
@@ -230,12 +230,13 @@ class StorageViewModel extends ChangeNotifier {
   // Pick & Upload an Entire Folder with Files
   Future<int> pickAndUploadFilesToFolder(String folderName) async {
     try {
-      final pickedFiles = await FilePicker.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
         type: FileType.any,
       );
-      if (pickedFiles.isEmpty) return 0;
+      if (result == null || result.files.isEmpty) return 0;
 
-      final files = pickedFiles
+      final files = result.files
           .where((f) => f.path != null)
           .map((f) => File(f.path!))
           .toList();

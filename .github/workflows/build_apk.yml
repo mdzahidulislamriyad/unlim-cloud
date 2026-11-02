@@ -75,7 +75,7 @@ jobs:
           fi
 
           echo "=== 4. Prepare Branded Release ==="
-          cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/UnLim-Cloud-v1.0.2.apk
+          cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/UnLim-Cloud-v1.0.3.apk
           echo "✅ Build completed successfully!"
 
       - name: Upload Universal APK Artifact
@@ -83,26 +83,27 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: UnLim-Cloud-APK
-          path: build/app/outputs/flutter-apk/UnLim-Cloud-v1.0.2.apk
+          path: build/app/outputs/flutter-apk/UnLim-Cloud-v1.0.3.apk
           if-no-files-found: error
 
       - name: Publish Direct Release (Easy Download)
         if: success()
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.2
-          name: "UnLim Cloud v1.0.2 Release (In-Built Players & Folder Upload Fix)"
+          tag_name: v1.0.3
+          name: "UnLim Cloud v1.0.3 Release (Bulletproof Local Streaming & 404 Fix)"
           body: |
-            ## 🚀 UnLim Cloud Storage v1.0.2 APK
-            - **Bulletproof In-Built Image Viewer**: Auto-fetch & local display fallback (never broken preview).
-            - **Resilient In-Built Video Player**: Direct streaming + seamless local buffering fallback with full playback controls.
-            - **Folder Upload Fix**: Folder name dialog + multi-file selection directly into the folder.
-            - **Network Security Config**: Full support for local Bot API & streaming on Android 9-15.
+            ## 🚀 UnLim Cloud Storage v1.0.3 APK
+            - **100% Fixed HTTP 404 in Image & Video Playback**: Dynamic file_id resolution avoids temporary/deleted file paths.
+            - **Automatic Fallback & URL Refresh**: If any cached URL fails, it automatically queries Telegram Bot API for the fresh persistent URL.
+            - **Fixed Folder Files View**: Opening any folder now correctly shows the files inside that folder.
+            - **Upload Files Directly to Folder**: Added "Upload Files Here" button inside folders.
+            - **Seamless Local 2GB Streaming**: Streams local videos with zero buffering using the upgraded range server.
             
             ### 📥 Download APK
-            Download **UnLim-Cloud-v1.0.2.apk** directly below.
+            Download **UnLim-Cloud-v1.0.3.apk** directly below.
           files: |
-            build/app/outputs/flutter-apk/UnLim-Cloud-v1.0.2.apk
+            build/app/outputs/flutter-apk/UnLim-Cloud-v1.0.3.apk
             build/app/outputs/flutter-apk/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

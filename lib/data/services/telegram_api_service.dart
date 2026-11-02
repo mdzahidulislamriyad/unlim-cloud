@@ -207,11 +207,27 @@ class TelegramApiService {
           final pathStr = filePath.toString();
           if (pathStr.startsWith('/')) {
             // Local Telegram Bot API server returned absolute local path on disk.
-            // Route through high-performance local streaming server on port 8082
+            // If the local path happens to be in a temporary folder, give Bot API a brief moment to persist
+            if (pathStr.contains('/temp/')) {
+              await Future.delayed(const Duration(milliseconds: 350));
+              try {
+                final retryRes = await http.get(uri).timeout(const Duration(seconds: 10));
+                if (retryRes.statusCode == 200) {
+                  final retryData = jsonDecode(retryRes.body);
+                  final retryPath = retryData['result']?['file_path'];
+                  if (retryPath != null && !retryPath.toString().contains('/temp/')) {
+                    final baseUri = Uri.tryParse(_apiEndpoint);
+                    final host = (baseUri != null && baseUri.host.isNotEmpty) ? baseUri.host : '127.0.0.1';
+                    final scheme = (baseUri != null && baseUri.scheme.isNotEmpty) ? baseUri.scheme : 'http';
+                    return '$scheme://$host:8082/file?file_id=$fileId&path=${Uri.encodeComponent(retryPath.toString())}';
+                  }
+                }
+              } catch (_) {}
+            }
             final baseUri = Uri.tryParse(_apiEndpoint);
             final host = (baseUri != null && baseUri.host.isNotEmpty) ? baseUri.host : '127.0.0.1';
             final scheme = (baseUri != null && baseUri.scheme.isNotEmpty) ? baseUri.scheme : 'http';
-            return '$scheme://$host:8082/file?path=${Uri.encodeComponent(pathStr)}';
+            return '$scheme://$host:8082/file?file_id=$fileId&path=${Uri.encodeComponent(pathStr)}';
           }
           return '$_fileBaseUrl/$filePath';
         }

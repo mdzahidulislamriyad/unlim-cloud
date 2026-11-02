@@ -163,10 +163,13 @@ class CloudStorageRepository {
 
   // Get File Download URL
   Future<String?> getDownloadUrl(CloudFile file) async {
-    if (file.directDownloadUrl != null &&
-        file.directDownloadUrl!.isNotEmpty &&
-        !file.directDownloadUrl!.contains(':8081/file/')) {
-      return file.directDownloadUrl;
+    final cached = file.directDownloadUrl;
+    if (cached != null &&
+        cached.isNotEmpty &&
+        !cached.contains(':8081/file/') &&
+        !cached.contains('/tg-bot-api-temp/') &&
+        !cached.contains('%2Ftg-bot-api-temp%2F')) {
+      return cached;
     }
     final url = await _telegramApi.getFileDownloadUrl(file.telegramFileId);
     if (url != null) {
@@ -181,9 +184,23 @@ class CloudStorageRepository {
 
   // Download
   Future<String?> downloadFile(CloudFile file) async {
-    final url = await getDownloadUrl(file);
+    String? url = await getDownloadUrl(file);
     if (url == null) return null;
-    return await _downloadManager.downloadFile(file: file, downloadUrl: url);
+
+    String? path = await _downloadManager.downloadFile(file: file, downloadUrl: url);
+    // If download failed (e.g. 404 or connection reset), force refresh URL and retry once
+    if (path == null) {
+      final freshUrl = await _telegramApi.getFileDownloadUrl(file.telegramFileId);
+      if (freshUrl != null && freshUrl != url) {
+        final idx = _files.indexWhere((f) => f.id == file.id);
+        if (idx != -1) {
+          _files[idx] = _files[idx].copyWith(directDownloadUrl: freshUrl);
+          await _localStorage.saveFiles(_files);
+        }
+        path = await _downloadManager.downloadFile(file: file, downloadUrl: freshUrl);
+      }
+    }
+    return path;
   }
 
   StorageStats getStats() {

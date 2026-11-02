@@ -42,9 +42,21 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
       _statusMessage = 'Fetching from cloud...';
     });
 
+    final vm = context.read<StorageViewModel>();
+    String currentUrl = widget.imageUrl;
+
     try {
       // 1. Try direct HTTP fetch
-      final response = await http.get(Uri.parse(widget.imageUrl)).timeout(const Duration(seconds: 12));
+      var response = await http.get(Uri.parse(currentUrl)).timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) {
+        // Try getting fresh URL from repository if 404 or failed
+        final freshUrl = await vm.getDownloadUrl(widget.file);
+        if (freshUrl != null && freshUrl != currentUrl) {
+          currentUrl = freshUrl;
+          response = await http.get(Uri.parse(currentUrl)).timeout(const Duration(seconds: 10));
+        }
+      }
+
       if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
         if (mounted) {
           setState(() {
@@ -61,7 +73,6 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
       setState(() {
         _statusMessage = 'Downloading image to view...';
       });
-      final vm = context.read<StorageViewModel>();
       final path = await vm.downloadFile(widget.file);
       if (path != null && mounted) {
         setState(() {

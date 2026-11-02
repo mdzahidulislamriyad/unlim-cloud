@@ -42,17 +42,30 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       _statusMessage = 'Connecting to video stream...';
     });
 
+    final vm = context.read<StorageViewModel>();
+    String streamUrl = widget.videoUrl;
+
     // 1. Attempt Direct Streaming via Network URL
     try {
       final controller = VideoPlayerController.networkUrl(
-        Uri.parse(widget.videoUrl),
+        Uri.parse(streamUrl),
       );
 
       await controller.initialize().timeout(const Duration(seconds: 10));
       _setupChewie(controller);
       return;
     } catch (_) {
-      // Network stream failed or cleartext/range not available
+      // Direct stream failed. Try fetching fresh URL in case of stale path
+      try {
+        final freshUrl = await vm.getDownloadUrl(widget.file);
+        if (freshUrl != null && freshUrl != streamUrl) {
+          streamUrl = freshUrl;
+          final retryController = VideoPlayerController.networkUrl(Uri.parse(streamUrl));
+          await retryController.initialize().timeout(const Duration(seconds: 10));
+          _setupChewie(retryController);
+          return;
+        }
+      } catch (_) {}
     }
 
     // 2. Seamless Auto-Fallback: Download file locally and play smoothly
@@ -61,7 +74,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         _statusMessage = 'Buffering & preparing playback...';
       });
 
-      final vm = context.read<StorageViewModel>();
       final localPath = await vm.downloadFile(widget.file);
 
       if (localPath != null && mounted) {
