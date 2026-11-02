@@ -1,5 +1,3 @@
-import '../models/cloud_folder.dart';
-
 class CloudFile {
   final String id;
   final String name;

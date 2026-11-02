@@ -24,27 +24,28 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.x'
           channel: 'stable'
           cache: true
+
+      - name: Recreate clean Android Platform files
+        run: |
+          rm -rf android
+          flutter create . --platforms=android --org=com.kratosle --project-name=unlim_cloud
+          # Inject permissions into AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>' android/app/src/main/AndroidManifest.xml
+          # Set minSdk to 21
+          sed -i 's/minSdkVersion = flutter.minSdkVersion/minSdkVersion = 21/g' android/app/build.gradle 2>/dev/null || true
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' android/app/build.gradle 2>/dev/null || true
 
       - name: Get Dependencies
         run: flutter pub get
 
-      - name: Build Android APK
-        run: flutter build apk --release --split-per-abi
-
-      - name: Build Fat APK (Universal)
-        run: flutter build apk --release
+      - name: Build Fat APK (Universal Release)
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload Universal APK
         uses: actions/upload-artifact@v4
         with:
-          name: unlim-cloud-universal-apk
+          name: unlim-cloud-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-
-      - name: Upload Split APKs (arm64, armeabi, x86_64)
-        uses: actions/upload-artifact@v4
-        with:
-          name: unlim-cloud-split-apks
-          path: build/app/outputs/flutter-apk/app-*-release.apk
+          if-no-files-found: error
