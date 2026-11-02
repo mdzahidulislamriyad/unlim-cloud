@@ -230,7 +230,7 @@ class StorageViewModel extends ChangeNotifier {
   // Pick & Upload an Entire Folder with Files
   Future<int> pickAndUploadFilesToFolder(String folderName) async {
     try {
-      final result = await FilePicker.platform.pickFiles(allowMultiple: true);
+      final result = await FilePicker.pickFiles(allowMultiple: true);
       if (result == null || result.files.isEmpty) return 0;
 
       final files = result.files
