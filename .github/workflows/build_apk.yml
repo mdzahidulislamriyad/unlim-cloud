@@ -5,6 +5,9 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build Release APK
@@ -13,6 +16,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -35,7 +40,7 @@ jobs:
           # Inject Android Permissions
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>' android/app/src/main/AndroidManifest.xml
           
-          # Configure SDK 34 and minSdk 21 via local.properties
+          # Set local.properties with SDK 34 and minSdk 21
           echo "flutter.minSdkVersion=21" >> android/local.properties
           echo "flutter.targetSdkVersion=34" >> android/local.properties
           echo "flutter.compileSdkVersion=34" >> android/local.properties
@@ -49,8 +54,8 @@ jobs:
           flutter build apk --release --no-tree-shake-icons > build.log 2>&1
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
-            echo "❌ BUILD FAILED! Dumping last 200 lines:"
-            tail -n 200 build.log
+            echo "❌ BUILD FAILED!"
+            tail -n 150 build.log
             exit $EXIT_CODE
           fi
 
@@ -62,9 +67,13 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
 
-      - name: Upload Build Log on Failure
+      - name: Push Error Log to Git Branch on Failure
         if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-failure-log
-          path: build.log
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git checkout -B build-logs
+          cp build.log error.txt
+          git add error.txt
+          git commit -m "chore: save build failure log" || true
+          git push -f origin build-logs || true
