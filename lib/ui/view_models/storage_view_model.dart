@@ -213,6 +213,40 @@ class StorageViewModel extends ChangeNotifier {
     }
   }
 
+  // Pick & Upload an Entire Folder Recursively
+  Future<int> pickAndUploadFolder() async {
+    try {
+      final folderPath = await FilePicker.platform.getDirectoryPath();
+      if (folderPath == null || folderPath.isEmpty) return 0;
+
+      final dir = Directory(folderPath);
+      if (!await dir.exists()) return 0;
+
+      final folderName = folderPath.split(Platform.pathSeparator).last;
+      final newFolder = await _repository.createFolder(
+        folderName,
+        parentId: _currentFolderId,
+      );
+
+      int count = 0;
+      await for (final entity in dir.list(recursive: true, followLinks: false)) {
+        if (entity is File) {
+          final uploaded = await _repository.uploadFile(
+            file: entity,
+            folderId: newFolder.id,
+          );
+          if (uploaded != null) {
+            count++;
+            notifyListeners();
+          }
+        }
+      }
+      return count;
+    } catch (e) {
+      return 0;
+    }
+  }
+
   // Create Folder
   Future<void> createFolder(String name) async {
     if (name.trim().isEmpty) return;

@@ -6,6 +6,7 @@ import '../widgets/stat_cards.dart';
 import '../widgets/file_card.dart';
 import '../widgets/create_folder_dialog.dart';
 import 'image_viewer_screen.dart';
+import 'video_player_screen.dart';
 import 'setup_guide_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -225,6 +226,16 @@ class HomeScreen extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (_) => ImageViewerScreen(file: file, imageUrl: url),
+                          ),
+                        );
+                      }
+                    } else if (file.type == 'video') {
+                      final url = await vm.getDownloadUrl(file);
+                      if (url != null && context.mounted) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => VideoPlayerScreen(file: file, videoUrl: url),
                           ),
                         );
                       }

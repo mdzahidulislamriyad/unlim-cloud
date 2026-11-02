@@ -88,6 +88,41 @@ class _MainShellScreenState extends State<MainShellScreen> {
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
+                  color: AppTheme.colorArchive.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.drive_folder_upload_rounded, color: AppTheme.colorArchive),
+              ),
+              title: const Text('Upload Folder', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('Upload an entire folder and all its files'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                if (!vm.isConnected) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please configure your Telegram Bot in Settings first!')),
+                  );
+                  _onNavigateTab(3);
+                  return;
+                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Selecting folder and uploading...')),
+                );
+                final count = await vm.pickAndUploadFolder();
+                if (count > 0 && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Folder uploaded with $count file(s)!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
                   color: AppTheme.primaryCyan.withOpacity(0.14),
                   borderRadius: BorderRadius.circular(12),
                 ),
