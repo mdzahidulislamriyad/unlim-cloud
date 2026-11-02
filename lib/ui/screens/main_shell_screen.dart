@@ -149,11 +149,6 @@ class _MainShellScreenState extends State<MainShellScreen> {
                   }
                 }
               },
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              },
             ),
             const SizedBox(height: 8),
             ListTile(
