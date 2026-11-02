@@ -37,7 +37,7 @@ class ImageViewerScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.share_outlined),
             onPressed: () {
-              Share.shareUri(Uri.parse(imageUrl));
+              Share.share(imageUrl);
             },
           ),
           IconButton(

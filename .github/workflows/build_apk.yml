@@ -27,20 +27,69 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Recreate clean Android Platform files
+      - name: Configure Android Project
         run: |
           rm -rf android
           flutter create . --platforms=android --org=com.kratosle --project-name=unlim_cloud
-          # Inject permissions into AndroidManifest.xml
+          
+          # Inject Android Permissions
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>' android/app/src/main/AndroidManifest.xml
-          # Set minSdk to 21
-          sed -i 's/minSdkVersion = flutter.minSdkVersion/minSdkVersion = 21/g' android/app/build.gradle 2>/dev/null || true
-          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' android/app/build.gradle 2>/dev/null || true
+          
+          # Set local.properties with SDK 34 and minSdk 21
+          echo "flutter.minSdkVersion=21" >> android/local.properties
+          echo "flutter.targetSdkVersion=34" >> android/local.properties
+          echo "flutter.compileSdkVersion=34" >> android/local.properties
+
+          # Update build.gradle to enforce minSdk 21 and compileSdk 34 across all plugins
+          python3 -c "
+          import os
+
+          # Update app build.gradle / build.gradle.kts
+          for fname in ['android/app/build.gradle', 'android/app/build.gradle.kts']:
+              if os.path.exists(fname):
+                  with open(fname, 'r') as f:
+                      txt = f.read()
+                  txt = txt.replace('minSdkVersion = flutter.minSdkVersion', 'minSdkVersion = 21')
+                  txt = txt.replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion 21')
+                  txt = txt.replace('minSdk = flutter.minSdkVersion', 'minSdk = 21')
+                  txt = txt.replace('compileSdkVersion flutter.compileSdkVersion', 'compileSdkVersion 34')
+                  txt = txt.replace('compileSdk = flutter.compileSdkVersion', 'compileSdk = 34')
+                  txt = txt.replace('targetSdkVersion flutter.targetSdkVersion', 'targetSdkVersion 34')
+                  txt = txt.replace('targetSdk = flutter.targetSdkVersion', 'targetSdk = 34')
+                  with open(fname, 'w') as f:
+                      f.write(txt)
+                  print('Updated:', fname)
+
+          # Update root build.gradle if groovy
+          root_bg = 'android/build.gradle'
+          if os.path.exists(root_bg):
+              subprojects_patch = '''
+          subprojects {
+              afterEvaluate { project ->
+                  if (project.hasProperty('android')) {
+                      project.android {
+                          if (namespace == null) {
+                              namespace project.group
+                          }
+                          compileSdkVersion 34
+                          defaultConfig {
+                              minSdkVersion 21
+                              targetSdkVersion 34
+                          }
+                      }
+                  }
+              }
+          }
+          '''
+              with open(root_bg, 'a') as f:
+                  f.write(subprojects_patch)
+              print('Patched root build.gradle')
+          "
 
       - name: Get Dependencies
         run: flutter pub get
 
-      - name: Build Fat APK (Universal Release)
+      - name: Build APK (Release)
         run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload Universal APK
