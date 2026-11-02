@@ -105,14 +105,50 @@ class _MainShellScreenState extends State<MainShellScreen> {
                   _onNavigateTab(3);
                   return;
                 }
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Selecting folder and uploading...')),
+
+                final folderName = await showDialog<String>(
+                  context: context,
+                  builder: (dCtx) {
+                    final controller = TextEditingController(text: 'New Folder');
+                    return AlertDialog(
+                      title: const Text('Create & Upload Folder'),
+                      content: TextField(
+                        controller: controller,
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Folder Name',
+                          hintText: 'e.g. Vacation, Documents',
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dCtx),
+                          child: const Text('Cancel'),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(dCtx, controller.text.trim()),
+                          child: const Text('Select Files'),
+                        ),
+                      ],
+                    );
+                  },
                 );
-                final count = await vm.pickAndUploadFolder();
-                if (count > 0 && context.mounted) {
+
+                if (folderName != null && folderName.isNotEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Folder uploaded with $count file(s)!'),
+                    SnackBar(content: Text('Select files for "$folderName"...')),
+                  );
+                  final count = await vm.pickAndUploadFilesToFolder(folderName);
+                  if (count > 0 && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Uploaded $count file(s) into "$folderName"!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                }
+              },
                       backgroundColor: Colors.green,
                     ),
                   );
