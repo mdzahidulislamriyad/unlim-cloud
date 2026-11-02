@@ -58,14 +58,38 @@ jobs:
             tail -n 150 build.log
             exit $EXIT_CODE
           fi
+          
+          # Copy to a clean branded name
+          cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/UnLim-Cloud-v1.0.0.apk
 
-      - name: Upload Universal APK
+      - name: Upload Universal APK Artifact
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: unlim-cloud-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: UnLim-Cloud-APK
+          path: build/app/outputs/flutter-apk/UnLim-Cloud-v1.0.0.apk
           if-no-files-found: error
+
+      - name: Publish Direct Release (Easy Download)
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          name: "UnLim Cloud v1.0.0 Release"
+          body: |
+            ## 🚀 UnLim Cloud Storage v1.0.0 APK
+            - **Unlimited Cloud Storage** backed by Telegram Bot API & Private Channels
+            - **Recursive Folder Upload**: Upload whole directories preserving folder hierarchy
+            - **Instant Media Streaming**: Play cloud videos and view images directly without downloading
+            - **Custom Local Bot API Support**: File limit up to 2GB
+            
+            ### 📥 Download APK
+            Download **UnLim-Cloud-v1.0.0.apk** directly below and install on Android.
+          files: |
+            build/app/outputs/flutter-apk/UnLim-Cloud-v1.0.0.apk
+            build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push Error Log to Git Branch on Failure
         if: failure()

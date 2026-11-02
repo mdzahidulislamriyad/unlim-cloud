@@ -39,7 +39,7 @@ class AppTheme {
       elevation: 0,
       centerTitle: false,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: cardDark,
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -59,7 +59,7 @@ class AppTheme {
       foregroundColor: Colors.black,
       elevation: 4,
     ),
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       backgroundColor: surfaceDark,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
@@ -85,7 +85,7 @@ class AppTheme {
       elevation: 0,
       centerTitle: false,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: surfaceLight,
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -105,7 +105,7 @@ class AppTheme {
       foregroundColor: Colors.white,
       elevation: 4,
     ),
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       backgroundColor: surfaceLight,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
