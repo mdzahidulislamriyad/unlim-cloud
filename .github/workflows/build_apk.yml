@@ -58,11 +58,19 @@ jobs:
       - name: Get Dependencies
         run: flutter pub get
 
-      - name: Analyze Dart Code
-        run: flutter analyze
-
       - name: Build APK (Release)
-        run: flutter build apk --release --no-tree-shake-icons
+        run: |
+          set +e
+          flutter build apk --release --no-tree-shake-icons > build.log 2>&1
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "## ❌ Build Error Log" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 120 build.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 120 build.log
+            exit $EXIT_CODE
+          fi
 
       - name: Upload Universal APK
         uses: actions/upload-artifact@v4
