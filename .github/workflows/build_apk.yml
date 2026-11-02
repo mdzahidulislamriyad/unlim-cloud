@@ -32,42 +32,46 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Configure Android Platform
+      - name: Build Android APK
         run: |
+          set +e
+          exec > build.log 2>&1
+          
+          echo "=== 1. Configure Android Platform ==="
           rm -rf android
           flutter create . --platforms=android --org=com.kratosle --project-name=unlim_cloud
           
           # Inject Android Permissions
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>\n    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>' android/app/src/main/AndroidManifest.xml
           
-          # Set local.properties with SDK 37 and minSdk 21
           echo "flutter.minSdkVersion=21" >> android/local.properties
           echo "flutter.targetSdkVersion=35" >> android/local.properties
           echo "flutter.compileSdkVersion=37" >> android/local.properties
           echo "android.suppressUnsupportedCompileSdk=36,37" >> android/gradle.properties
 
-          # Patch android/app/build.gradle.kts to compileSdk 37
           if [ -f "android/app/build.gradle.kts" ]; then
             sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 37/g' android/app/build.gradle.kts
           fi
 
-      - name: Get Dependencies
-        run: |
-          flutter pub get 2>&1 | tee build.log
-
-      - name: Build APK (Release)
-        run: |
-          set +e
-          flutter build apk --release --no-tree-shake-icons >> build.log 2>&1
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "❌ BUILD FAILED!"
-            tail -n 150 build.log
-            exit $EXIT_CODE
+          echo "=== 2. Get Dependencies ==="
+          flutter pub get
+          PUB_STATUS=$?
+          if [ $PUB_STATUS -ne 0 ]; then
+            echo "❌ flutter pub get failed with code $PUB_STATUS"
+            exit $PUB_STATUS
           fi
-          
-          # Copy to a clean branded name
+
+          echo "=== 3. Build APK ==="
+          flutter build apk --release --no-tree-shake-icons
+          BUILD_STATUS=$?
+          if [ $BUILD_STATUS -ne 0 ]; then
+            echo "❌ flutter build apk failed with code $BUILD_STATUS"
+            exit $BUILD_STATUS
+          fi
+
+          echo "=== 4. Prepare Branded Release ==="
           cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/UnLim-Cloud-v1.0.0.apk
+          echo "✅ Build completed successfully!"
 
       - name: Upload Universal APK Artifact
         if: success()
