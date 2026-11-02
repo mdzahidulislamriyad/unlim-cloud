@@ -43,6 +43,8 @@ class DownloadManagerService {
   List<TransferItem> get transfers => List.unmodifiable(_transfers);
   Stream<List<TransferItem>> get transfersStream => _streamController.stream;
 
+  DateTime _lastProgressNotify = DateTime.fromMillisecondsSinceEpoch(0);
+
   void _notify() {
     _streamController.add(List.unmodifiable(_transfers));
   }
@@ -58,7 +60,12 @@ class DownloadManagerService {
       _transfers[idx].progress = progress.clamp(0.0, 1.0);
       _transfers[idx].bytesTransferred = bytesTransferred;
       _transfers[idx].status = TransferStatus.inProgress;
-      _notify();
+      
+      final now = DateTime.now();
+      if (now.difference(_lastProgressNotify).inMilliseconds > 150 || progress >= 1.0) {
+        _lastProgressNotify = now;
+        _notify();
+      }
     }
   }
 
@@ -116,7 +123,7 @@ class DownloadManagerService {
       final request = http.Request('GET', Uri.parse(downloadUrl));
       final response = await client.send(request);
 
-      if (response.statusCode != 200) {
+      if (response.statusCode != 200 && response.statusCode != 206) {
         markFailed(transferId, 'HTTP ${response.statusCode}');
         return null;
       }

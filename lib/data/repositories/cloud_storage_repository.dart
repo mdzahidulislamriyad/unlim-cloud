@@ -163,7 +163,9 @@ class CloudStorageRepository {
 
   // Get File Download URL
   Future<String?> getDownloadUrl(CloudFile file) async {
-    if (file.directDownloadUrl != null && file.directDownloadUrl!.isNotEmpty) {
+    if (file.directDownloadUrl != null &&
+        file.directDownloadUrl!.isNotEmpty &&
+        !file.directDownloadUrl!.contains(':8081/file/')) {
       return file.directDownloadUrl;
     }
     final url = await _telegramApi.getFileDownloadUrl(file.telegramFileId);

@@ -46,6 +46,11 @@ class StorageViewModel extends ChangeNotifier {
     _isDarkMode = _localStorage.isDarkMode();
     _isAutoBackup = _localStorage.isAutoBackup();
     _checkInitialConnection();
+
+    // Listen to real-time upload/download progress updates
+    _downloadManager.transfersStream.listen((_) {
+      notifyListeners();
+    });
   }
 
   // Getters
@@ -66,6 +71,16 @@ class StorageViewModel extends ChangeNotifier {
   String get customApiServer => _localStorage.getCustomApiServer();
 
   List<TransferItem> get transfers => _downloadManager.transfers;
+
+  TransferItem? get activeTransfer {
+    try {
+      return _downloadManager.transfers.firstWhere((t) => t.status == TransferStatus.inProgress);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool get hasActiveTransfer => _downloadManager.transfers.any((t) => t.status == TransferStatus.inProgress);
 
   Future<void> _checkInitialConnection() async {
     if (_telegramApi.isConfigured) {

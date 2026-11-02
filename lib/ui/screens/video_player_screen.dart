@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
@@ -24,6 +25,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
   bool _hasError = false;
+  bool _isDownloadingLocally = false;
   String _errorMessage = '';
 
   @override
@@ -147,11 +149,58 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
-                    FilledButton.icon(
-                      icon: const Icon(Icons.download_rounded),
-                      label: const Text('Download & Play Locally'),
-                      onPressed: () => vm.downloadFile(widget.file),
-                    ),
+                    _isDownloadingLocally
+                        ? const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(color: AppTheme.primaryTeal),
+                              SizedBox(height: 12),
+                              Text(
+                                'Downloading to play locally...',
+                                style: TextStyle(color: Colors.white, fontSize: 13),
+                              ),
+                            ],
+                          )
+                        : FilledButton.icon(
+                            icon: const Icon(Icons.download_rounded),
+                            label: const Text('Download & Play Locally'),
+                            onPressed: () async {
+                              setState(() => _isDownloadingLocally = true);
+                              final path = await vm.downloadFile(widget.file);
+                              if (path != null && mounted) {
+                                try {
+                                  final newController = VideoPlayerController.file(File(path));
+                                  await newController.initialize();
+                                  _chewieController?.dispose();
+                                  _videoPlayerController.dispose();
+                                  _videoPlayerController = newController;
+                                  _chewieController = ChewieController(
+                                    videoPlayerController: _videoPlayerController,
+                                    autoPlay: true,
+                                    aspectRatio: _videoPlayerController.value.aspectRatio > 0
+                                        ? _videoPlayerController.value.aspectRatio
+                                        : 16 / 9,
+                                  );
+                                  setState(() {
+                                    _hasError = false;
+                                    _isDownloadingLocally = false;
+                                  });
+                                } catch (e) {
+                                  setState(() {
+                                    _errorMessage = 'Local play error: $e';
+                                    _isDownloadingLocally = false;
+                                  });
+                                }
+                              } else {
+                                if (mounted) {
+                                  setState(() => _isDownloadingLocally = false);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Download failed')),
+                                  );
+                                }
+                              }
+                            },
+                          ),
                   ],
                 ),
               )

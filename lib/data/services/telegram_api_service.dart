@@ -204,6 +204,15 @@ class TelegramApiService {
         final data = jsonDecode(res.body);
         final filePath = data['result']?['file_path'];
         if (filePath != null) {
+          final pathStr = filePath.toString();
+          if (pathStr.startsWith('/')) {
+            // Local Telegram Bot API server returned absolute local path on disk.
+            // Route through high-performance local streaming server on port 8082
+            final baseUri = Uri.tryParse(_apiEndpoint);
+            final host = (baseUri != null && baseUri.host.isNotEmpty) ? baseUri.host : '127.0.0.1';
+            final scheme = (baseUri != null && baseUri.scheme.isNotEmpty) ? baseUri.scheme : 'http';
+            return '$scheme://$host:8082/file?path=${Uri.encodeComponent(pathStr)}';
+          }
           return '$_fileBaseUrl/$filePath';
         }
       }

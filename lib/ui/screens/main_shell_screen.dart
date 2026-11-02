@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/services/download_manager_service.dart';
 import '../view_models/storage_view_model.dart';
 import '../widgets/create_folder_dialog.dart';
 import 'home_screen.dart';
@@ -157,9 +158,17 @@ class _MainShellScreenState extends State<MainShellScreen> {
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: screens,
+      body: Column(
+        children: [
+          Expanded(
+            child: IndexedStack(
+              index: _currentIndex,
+              children: screens,
+            ),
+          ),
+          if (vm.activeTransfer != null && _currentIndex != 2)
+            _buildActiveTransferBar(context, vm.activeTransfer!),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddBottomSheet(context, vm),
@@ -169,28 +178,136 @@ class _MainShellScreenState extends State<MainShellScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home_rounded),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.folder_outlined),
             activeIcon: Icon(Icons.folder_rounded),
             label: 'Files',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.swap_vert_rounded),
-            activeIcon: Icon(Icons.swap_vert_rounded),
+            icon: Badge(
+              isLabelVisible: vm.hasActiveTransfer,
+              backgroundColor: AppTheme.primaryTeal,
+              smallSize: 8,
+              child: const Icon(Icons.swap_vert_rounded),
+            ),
+            activeIcon: Badge(
+              isLabelVisible: vm.hasActiveTransfer,
+              backgroundColor: AppTheme.primaryTeal,
+              smallSize: 8,
+              child: const Icon(Icons.swap_vert_rounded),
+            ),
             label: 'Transfers',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.settings_outlined),
             activeIcon: Icon(Icons.settings_rounded),
             label: 'Settings',
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActiveTransferBar(BuildContext context, TransferItem item) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _onNavigateTab(2), // Switch to Transfers tab
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF131D2A),
+            border: Border(
+              top: BorderSide(color: AppTheme.primaryTeal.withOpacity(0.3), width: 1.5),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryTeal.withOpacity(0.16),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      item.isUpload ? Icons.cloud_upload_rounded : Icons.cloud_download_rounded,
+                      color: AppTheme.primaryTeal,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.isUpload ? 'Uploading ${item.fileName}' : 'Downloading ${item.fileName}',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${item.formattedProgress} • ${(item.bytesTransferred / (1024 * 1024)).toStringAsFixed(1)} MB / ${(item.totalBytes / (1024 * 1024)).toStringAsFixed(1)} MB',
+                          style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryTeal.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          item.formattedProgress,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryTeal,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: AppTheme.primaryTeal),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: item.progress > 0 ? item.progress : null,
+                  backgroundColor: Colors.white.withOpacity(0.08),
+                  color: AppTheme.primaryTeal,
+                  minHeight: 4,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
