@@ -20,13 +20,13 @@ dependencies:
   path_provider: ^2.1.2
   # UI & Media
   intl: ^0.19.0
-  file_picker: ^8.0.0
+  file_picker: any
   cached_network_image: ^3.3.1
-  video_player: ^2.8.6
-  chewie: ^1.8.5
-  open_filex: ^4.5.0
-  share_plus: ^9.0.0
-  permission_handler: ^11.3.1
+  video_player: any
+  chewie: any
+  open_filex: any
+  share_plus: any
+  permission_handler: any
   flutter_spinkit: ^5.2.0
   google_fonts: ^6.2.1
 
